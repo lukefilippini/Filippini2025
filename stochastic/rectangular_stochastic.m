@@ -31,9 +31,9 @@ Nl = length(f); % no. of lattice sites
 Nx = length(unique(xn)); % no. of nodes in x-direction
 Ny = length(unique(yn)); % no. of nodes in y-direction
 Uavg = zeros(Nl,M+1);
-Ustd = zeros(Nl,M+1);
+Ul = zeros(Nl,M+1);
+Uu = zeros(Nl,M+1);
 tau = T / M; % time step duration
-Z = 2.576;
 
 % Initial distribution of particles
 Sp = f' * V / Np; % scaling constant
@@ -45,7 +45,7 @@ fprintf('Number of particles scaled to Np = %g \n\n',Npn)
 % Run simulations
 N = repmat(N0,1,Ns); % initialise no. of nodes
 U = N * Sp ./ V; % initial particle density
-Uavg(:,1) = mean(U,2); Ustd(:,1) = std(U,[],2);
+Uavg(:,1) = mean(U,2); % Ustd(:,1) = std(U,[],2);
 
 fprintf('Stochastic progress: ')
 k = 0; % counter
@@ -88,13 +88,14 @@ for n = 1:M
         U(:,s) = N(:,s) .* Sp ./ V; % particle density at time tn
     end
 
-    Uavg(:,n+1) = mean(U,2); Ustd(:,n+1) = std(U,[],2);
+    Uavg(:,n+1) = mean(U,2);
+    Ul(:,n+1) = quantile(U,0.025,2); Uu(:,n+1) = quantile(U,0.975,2);
 
 end
 fprintf('\n\n')
 
 
-Ul = Uavg - Z*Ustd / sqrt(Ns); Uu = Uavg + Z*Ustd / sqrt(Ns);
+% Ul = Uavg - Z*Ustd / sqrt(Ns); Uu = Uavg + Z*Ustd / sqrt(Ns);
 
 % Compute average density and CI bounds
 Uavg = reshape(Uavg,Nx,Ny,M+1); % average density over Ns simulations

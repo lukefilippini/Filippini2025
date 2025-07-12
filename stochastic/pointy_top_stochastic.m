@@ -1,4 +1,4 @@
-function [Uavg,Ul,Uu] = pointy_top_stochastic(xn,yn,dx,dy,V,D,T,M,f,Np,Ns)
+function [Uavg,Ul,Uu,Npn] = pointy_top_stochastic(xn,yn,dx,dy,V,D,T,M,f,Np,Ns)
 % POINTY_TOP_STOCHASTIC conducts a random walk simulation of Np particles 
 % on a pointy-top hexagonal lattice in the rectangular domain [0,Lx] x 
 % [0,Ly], with no-flux boundary conditions, up to the final time T. 
@@ -27,21 +27,21 @@ Nl = length(f); % no. of lattice sites
 Nx = length(unique(xn)); % no. of nodes in x-direction
 Ny = length(unique(yn)); % no. of nodes in y-direction
 Uavg = zeros(Nl,M+1);
-Ustd = zeros(Nl,M+1);
-Z = 1.96;
+Ul = zeros(Nl,M+1);
+Uu = zeros(Nl,M+1);
 tau = T / M;
 
 % Initial distribution of particles
 Sp = f' * V / Np; % scaling constant
 N0 = round(f .* V / Sp); % initial number of particles
-Np = sum(N0); Sp = f' * V / Np;
+Npn = sum(N0); Sp = f' * V / Npn;
 P = define_cumulative_probabilities(xn,yn,dx,dy,D,Nl,Nx,Ny,tau);
-fprintf('No. of scaled particles: Np = %g \n',Np)
+fprintf('No. of scaled particles: Np = %g \n',Npn)
 
 % Run simulations
 N = repmat(N0,1,Ns); % initialise no. of nodes
 U = N * Sp ./ V; % initial particle density
-Uavg(:,1) = mean(U,2); Ustd(:,1) = std(U,[],2);
+Uavg(:,1) = mean(U,2);
 
 fprintf('Stochastic progress: ')
 k = 0; % counter
@@ -99,12 +99,11 @@ for n = 1:M
 
     end
 
-    Uavg(:,n+1) = mean(U,2); Ustd(:,n+1) = std(U,[],2);
+    Uavg(:,n+1) = mean(U,2);
+    Ul(:,n+1) = quantile(U,0.025,2); Uu(:,n+1) = quantile(U,0.975,2);
 
 end
 fprintf('\n')
-
-Ul = Uavg - Z*Ustd / sqrt(Ns); Uu = Uavg + Z*Ustd / sqrt(Ns);
 
 end
 
@@ -143,7 +142,7 @@ for s = 1:Nl
         P(s,3) = 3*Ppv/2; P(s,1) = 3*Ppdp/2; P(s,5) = 3*Ppdm/2;
     elseif j == 2 % southern convex boundary
         P(s,1) = 3*Ppdp/4; P(s,5) = 3*Ppdm/4; P(s,2) = 3*Ppdm/2;
-        P(s,6) = 3*Ppdp/2; P(s,4) = 3*Ppv/2;
+        P(s,6) = 3*Ppdp/2; P(s,4) = 3*Ppv/4;
     elseif j == Ny-1 % northern convex boundary
         if i == 1 % northwest convex corner
             P(s,3) = 3*Ppv/4; P(s,5) = 3*Ppdm; P(s,6) = 3*Ppdp/2;

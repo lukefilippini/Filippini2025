@@ -1,0 +1,73 @@
+Filippini_et_al_2025: Output of results
+---------------------------------------
+Domain: Lx = 1, Ly= 0.8
+Mesh configuration: rectangular
+Mesh resolution: high
+Eigenvalues: lambda_x = 0.08, lambda_y = 0.02
+Final time: T = 1
+No. of stochastic simulations: Ns = 5
+Initial condition: simple
+---------------------------------------
+
+Angle 1: 0.1309
+---------------------------------------
+Tensor components: Dxx = 0.0789778, Dxy = 0.00776457, Dyy = 0.0210222
+No. of elements: Ex = 111, Ey = 100 
+No. of lattice sites: N = 11312 
+No. of time steps: M = 2168 
+Time step duration: tau = 0.000461255 
+
+No. of desired particles: Np = 113120 (N x 10)
+No. of scaled particles: Np = 112640
+MSE: 0.000496963
+
+No. of desired particles: Np = 282800 (N x 25)
+No. of scaled particles: Np = 283360
+MSE: 0.000197513
+
+No. of desired particles: Np = 565600 (N x 50)
+No. of scaled particles: Np = 564960
+MSE: 9.90927e-05
+
+No. of desired particles: Np = 1131200 (N x 100)
+No. of scaled particles: Np = 1131680
+MSE: 4.94389e-05
+
+---------------------------------------
+
+
+Angle 2: 1.309
+---------------------------------------
+Tensor components: Dxx = 0.0240192, Dxy = 0.015, Dyy = 0.0759808
+No. of elements: Ex = 100, Ey = 77 
+No. of lattice sites: N = 7878 
+No. of time steps: M = 1705 
+Time step duration: tau = 0.00058651 
+
+No. of desired particles: Np = 78780 (N x 10)
+No. of scaled particles: Np = 78720
+MSE: 0.000502439
+
+No. of desired particles: Np = 196950 (N x 25)
+No. of scaled particles: Np = 196800
+MSE: 0.000201253
+
+No. of desired particles: Np = 393900 (N x 50)
+No. of scaled particles: Np = 393600
+MSE: 0.000100496
+
+No. of desired particles: Np = 787800 (N x 100)
+No. of scaled particles: Np = 787200
+MSE: 5.03412e-05
+
+---------------------------------------
+
+
+Angle 3: 2.35619
+---------------------------------------
+Tensor components: Dxx = 0.05, Dxy = -0.03, Dyy = 0.05
+No. of elements: Ex = 100, Ey = 138 
+No. of lattice sites: N = 14039 
+No. of time steps: M = 4017 
+Time step duration: tau = 0.000248942 
+

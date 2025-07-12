@@ -1,91 +1,88 @@
 %% Filippini et al. 2025 %%
 clc, clear, close all
-% delete("figures") % remove existing figures
 
 % Include subfolders in directory
 folder = fileparts(which("main_script.m"));
 addpath(genpath(folder));
+cmap = curl;
 
-% Domain parameters
+% Specify output of results
+visualise_results = true; % create and save comparison figures
+output_results = true; % output and save quantitative results
+
+% Parameters
 Lx = 1; Ly = 0.8; % length in x and y directions
-E = 61; % minimum no. of elements in x or y direction
-% res = 'low'; % mesh resolution
-% res = 'med';
-res = 'high';
-
-% mesh_config = 'rectangular'; % mesh configuration
-mesh_config = 'flat-top';
-% mesh_config = 'pointy-top';
-
-% Time parameters
+E = 100; % no. of elements in x or y direction (depends on configuration)
+res = 'high'; % mesh resolution ('low','med','high')
+mesh_config = 'flat-top'; % mesh configuration ('rectangular','flat-top','pointy-top')
 T = 1; % final time
-t = [T/32 T/8 T/4 T/2]; % plotting times
-Nt = length(t); % no. of plotting times
-
-% Stochastic parameters
-Ns = 5; % no. of simulations
+Ns = 5; % no. of stochastic simulations
+Npl = [10 25 50 100]; % no. of particles per lattice site 
 
 % Diffusion tensors 
-lambda_x = 0.01; lambda_y = 0.09; % tensor eigenvalues
-angles = [pi/24 pi/12 pi/6]; % rotation angles
-Nr = length(angles); % no. of rotation angles
+lambda_x = 0.08; lambda_y = 0.02; % tensor eigenvalues
+angles = [pi/24 5*pi/12 3*pi/4]; % rotational angles
+Nr = length(angles); % no. of rotational angles
 
 % Initial condition
-px = 0.4; py = 0.4; % proportion length and width of rectangle (simple)
 dens = 0.5; % approx. proportion of domain with non-zero density (complex)
-Nf = 20; % no. of aggregrations (complex)
-IC_type = 'simple'; % type of initial condition
-% IC_type = 'complex'; 
+Nf = 25; % no. of aggregrations (complex)
+IC_type = 'complex'; % type of initial condition ('simple or 'complex')
 
-% Visualisation of results
-visualise = true;
+% Define directory and plotting times (visualise_results == true)
+if visualise_results
 
-if visualise
+    % Plotting times (must be an even number)
+    t = [0 T/32 T/8 T/4 T/2];
+    Nt = length(t);
+
+    % Plotting colours
+    colours = [128,0,0; 245,130,48; 0 0 128; 0 130 200]/255;
+    
+    % Directory for figure storage
     config_dir = [mesh_config,'_',IC_type,'_',res];
-    mkdir("figures",config_dir)
+    mkdir("./figures",config_dir)
+    
 end
 
-colours = [128,0,0; 245,130,48; 0 0 128; 0 130 200]/255;
+% Create file for output of results (output_results == true)
+if output_results
 
-% Table of quantitative metrics and parameters
-output_metrics = true;
-output_table = true;
+    % Create text file
+    file_path = ['results/',config_dir,'_results.txt'];
+    sim_results = fopen(file_path,'w');
+    
+    % Record setup for test cases
+    fprintf(sim_results,'Filippini_et_al_2025: Output of results\n');
+    fprintf(sim_results,'---------------------------------------\n');
+    fprintf(sim_results,'Domain: Lx = %g, Ly= %g\n',Lx,Ly);
+    fprintf(sim_results,'Mesh configuration: %s\n',mesh_config);
+    fprintf(sim_results,'Mesh resolution: %s\n',res);
+    fprintf(sim_results,'Eigenvalues: lambda_x = %g, lambda_y = %g\n',lambda_x,lambda_y);
+    fprintf(sim_results,'Final time: T = %g\n',T);
+    fprintf(sim_results,'No. of stochastic simulations: Ns = %g\n',Ns);
+    fprintf(sim_results,'Initial condition: %s\n',IC_type);
+    fprintf(sim_results,'---------------------------------------\n');
 
-if output_table
-    metrics_table = cell(Nr*7,10);
-    table_headings = {'epsilon','MSE','theta','Dxx','Dxy','Dyy','Ex', ...
-        'Ey','tau(M)','Np'};
-    for i = 1:10
-        metrics_table{1,i} = table_headings{i};
-    end
-    m = 1; % counter
 end
 
-
-% Compute for each rotation angle / diffusion tensor
-fprintf('Eigenvalues: lambda_x = %g, lambda_y = %g\n',lambda_x,lambda_y)
-fprintf('Initial condition: %s\n',IC_type)
-for i = 1:Nr
-    if visualise
-        angle_dir = ['angle_',num2str(i)];
-        mkdir(strcat("./figures/",config_dir),angle_dir)
-    end
-
-    fprintf('Rotation angle: %g\n',angles(i))
-
+% Compute determinsitic and stochastic models
+for i = 1:Nr % for each rotational angle / diffusion tensor
+    
     % Generate diffusion tensor
     theta = angles(i); % rotation angle
     R = [cos(theta), -sin(theta); sin(theta), cos(theta)]; % rotation matrix
     D = R*[lambda_x 0; 0 lambda_y]*R'; % diffusion tensor
-    fprintf('Tensor components: Dxx = %g, Dxy = %g, Dyy = %g\n',D(1,1),D(1,2),D(2,2))
     
     % Check rectangular configuration viability
-    sb = 2 / abs(lambda_x - lambda_y) * sqrt(lambda_x*lambda_y/3);
-    if sb < 1 && isequal(mesh_config,'rectangular')
-        theta_crit = 1/2*asin(sb);
-        if theta > theta_crit
-            fprintf("Rectangular configuration unsuitable for rotation angle %g. \n",theta)
-            break
+    if isequal(mesh_config,'rectangular')
+        sb = 2 / abs(lambda_x - lambda_y) * sqrt(lambda_x*lambda_y/3); % bound on sin(2*theta)
+        if sb < 1
+            theta_crit = 1/2*asin(sb); % critical angle
+            if ((theta > theta_crit) && (theta < pi/2 - theta_crit)) || ((theta > pi/2 + theta_crit) && (theta < pi - theta_crit))
+                fprintf("Rectangular configuration unsuitable for rotation angle %g. \n",theta)
+                break
+            end
         end
     end
 
@@ -94,8 +91,6 @@ for i = 1:Nr
     dx = Lx / Ex; dy = Ly / Ey; % spatial steps
 
     % Generate mesh properties and no. of time steps
-    fprintf('---------------------------------------\n')
-    fprintf('No. of lattice sites: Ex = %g, Ey = %g \n',Ex,Ey)
     mesh_props = generate_mesh(Lx,Ly,Ex,Ey,mesh_config);
     M = generate_time_steps(dx,dy,T,D,mesh_config);
     
@@ -107,9 +102,13 @@ for i = 1:Nr
     V = mesh_props.V; % control volumes areas
     tau = T / M; % time step duration
 
+    if isequal(mesh_config,'rectangular')
+        [X,Y] = meshgrid(x,y);
+    end
+    
     % Define initial condition
     if isequal(IC_type,'simple')
-        f = generate_simple_IC(xn,yn,Lx,Ly,px,py);
+        f = generate_simple_IC(xn,yn,Lx,Ly);
     else
         f = generate_complex_IC(xn,yn,Nf,dens,mesh_config);
     end
@@ -118,53 +117,31 @@ for i = 1:Nr
     c = compute_numerical_sol(mesh_props,D,T,M,f,mesh_config);
     
     % Define number of particles
-    Np = [25 100 250]*(Ex+1)*(Ey+1); % no. of desired particles
-    Nps = length(Np); % no. of particle groups
+    Np = Npl*(Ex+1)*(Ey+1); % no. of desired particles
+    Nps = length(Np); % no. of test cases for each tensor
 
-    % if t(1) == 0
-    %     Np_dir = ['Np_0'];
-    %     mkdir(strcat('./figures/',config_dir,'/',angle_dir),Np_dir)
-    %     path_name = strcat('./figures/',config_dir,'/',angle_dir,'/',Np_dir,'/');
-    %     % Deterministic framework
-    %     if isequal(mesh_config,'rectangular')
-    %         surf(X,Y,c(:,:,1)')
-    %         axis([0, Lx, 0, Ly, 0, max(f)])
-    %     else % hexagonal configurations
-    %         trimesh(elements,xn,yn,c(:,1),'FaceColor','interp','EdgeColor','black')
-    % 
-    %         if isequal(mesh_config,'flat-top')
-    %             axis([0, Lx+dx/2, 0, Ly, 0, max(f)])
-    %         else
-    %             axis([0, Lx, 0, Ly+dy/2, 0, max(f)])
-    %         end
-    %     end
-    % 
-    %     xlab = xlabel('$x$','Interpreter','latex','FontSize',30);
-    %     set(xlab, 'Units', 'Normalized', 'Position', [0.5, -0.04, 0]);
-    % 
-    %     ylab = ylabel('$y$','Interpreter','latex','FontSize',30);
-    %     set(ylab, 'Units', 'Normalized', 'Position', [-0.05, 0.5, 0]);
-    % 
-    %     set(gca,'XTick',[0,Lx],'XTickLabel',{'$0$','$L_{x}$'}, ...
-    %         'YTick',[0,Ly],'YTickLabel',{'$0$','$L_{y}$'}, ...
-    %         'TickLabelInterpreter','latex','FontSize',30)
-    % 
-    %     shading interp
-    %     axis equal
-    %     view(0,90)
-    %     colormap(cork)
-    %     clim([min(f),max(f)])
-    % 
-    %     print(gcf,[path_name,['2D_',config_dir,'_',angle_dir, ...
-    %         '_',Np_dir,'_t0']],'-depsc2')
-    % end
+    % Create a new folder for current angle (visualise_results == true)
+    if visualise_results
+        angle_dir = ['angle_',num2str(i)];
+        mkdir(['./figures/',config_dir],angle_dir)
+    end
+
+    % Record current angle (output_results == true)
+    if output_results
+        fprintf(sim_results,'\nAngle %g: %g\n',i,angles(i));
+        fprintf(sim_results,'---------------------------------------\n');
+        fprintf(sim_results,'Tensor components: Dxx = %g, Dxy = %g, Dyy = %g\n',D(1,1),D(1,2),D(2,2));
+        fprintf(sim_results,'No. of elements: Ex = %g, Ey = %g \n',Ex,Ey);
+        fprintf(sim_results,'No. of lattice sites: N = %g \n',(Ex+1)*(Ey+1));
+        fprintf(sim_results,'No. of time steps: M = %g \n',M);
+        fprintf(sim_results,'Time step duration: tau = %g \n\n',tau);
+    end
 
     % Run stochastic model for each desired no. of particles
     for j = 1:Nps
         
         % Run stochastic simulations
         if isequal(mesh_config,'rectangular')
-            [X,Y] = meshgrid(x,y);
             [Uavg,Ul,Uu,Npn] = rectangular_stochastic(xn,yn,dx,dy,V,D,T,M,f,Np(j),Ns);
         elseif isequal(mesh_config,'flat-top')
             [Uavg,Ul,Uu,Npn] = flat_top_stochastic(xn,yn,dx,dy,V,D,T,M,f,Np(j),Ns);
@@ -172,154 +149,216 @@ for i = 1:Nr
             [Uavg,Ul,Uu,Npn] = pointy_top_stochastic(xn,yn,dx,dy,V,D,T,M,f,Np(j),Ns);
         end
         
-        % Visualisation of results
-        if visualise
-
-            Np_dir = ['Np_',num2str(j)];
-            mkdir(strcat('./figures/',config_dir,'/',angle_dir),Np_dir)
-            path_name = strcat('./figures/',config_dir,'/',angle_dir,'/',Np_dir,'/');
+        % Visualisation of results (visualise_results == true)
+        if visualise_results
             
-            % Two-dimensional comparisons 
+            % Define path for current test case
+            Np_dir = ['Np_',num2str(j)];
+            mkdir(['./figures/',config_dir,'/',angle_dir],Np_dir)
+            path_name = ['./figures/',config_dir,'/',angle_dir,'/',Np_dir,'/'];
+            
+            % Plot two-dimensional comparisons
+            p = 0; % figure counter
             indx = floor(t / tau + 1);
-            for n = 1:Nt
+            for n = indx
+
+                p = p + 1; % increase figure count
+
                 figure
-                tiledlayout(1,2,'Padding','compact','TileSpacing','compact')
+                tiledlayout(1,2,'Padding','compact','TileSpacing','compact');
+                max_stoch = max(Uavg,[],'all'); % maximum stochastic particle density
 
                 % Deterministic framework
                 nexttile()
                 if isequal(mesh_config,'rectangular')
-                    surf(X,Y,c(:,:,indx(n))')
-                    axis([0, Lx, 0, Ly, 0, max(Uavg,[],'all')])
+
+                    surf(X,Y,c(:,:,n)')
+                    axis([0, Lx, 0, Ly, 0, max_stoch])
+
                 else % hexagonal configurations
-                    trimesh(elements,xn,yn,c(:,indx(n)),'FaceColor','interp','EdgeColor','black')
-        
+                   
+                    trimesh(elements,xn,yn,c(:,n),'FaceColor','interp','EdgeColor','black')
+
                     if isequal(mesh_config,'flat-top')
-                        axis([0, Lx+dx/2, 0, Ly, 0, max(Uavg,[],'all')])
+                        axis([0, Lx+dx/2, 0, Ly, 0, max_stoch])
                     else
-                        axis([0, Lx, 0, Ly+dy/2, 0, max(Uavg,[],'all')])
+                        axis([0, Lx, 0, Ly+dy/2, 0, max_stoch])
                     end
+
                 end
-
-                xlab = xlabel('$x$','Interpreter','latex','FontSize',15);
-                set(xlab, 'Units', 'Normalized', 'Position', [0.5, -0.04, 0]);
-
-                ylab = ylabel('$y$','Interpreter','latex','FontSize',15);
-                set(ylab, 'Units', 'Normalized', 'Position', [-0.05, 0.5, 0]);
-
-                set(gca,'XTick',[0,Lx],'XTickLabel',{'$0$','$L_{x}$'}, ...
-                    'YTick',[0,Ly],'YTickLabel',{'$0$','$L_{y}$'}, ...
-                    'TickLabelInterpreter','latex','FontSize',15)
-
+               
                 shading interp
                 axis equal
+                grid off
                 view(0,90)
-                colormap(cork)
+                colormap(cmap)
                 clim([min(f),max(f)])
+                
+                hd = gca; 
+                % set(hd,'PositionConstraint','InnerPosition');
+                set(hd,'XColor','none','YColor','none')
+                % set(hd,'YTick',[0,Ly],'YTickLabel',{'$0$',['$',num2str(Ly),'$']})
+                % text(-0.05,Ly/2,'$y$', ...
+                %     'Color','k','FontSize',40,'HorizontalAlignment','center', ...
+                %     'VerticalAlignment','middle','Rotation',90,'Interpreter','latex')
+                % text(zeros(size(hd.YTick))-0.035*Lx,hd.YTick,hd.YTickLabel, ...
+                %     'Color','k','FontSize',40,'HorizontalAlignment','center', ...
+                %     'VerticalAlignment','middle','Interpreter','latex')
+                
+                if n == indx(2)
+                    title('Deterministic','FontSize',55,'Interpreter','latex')
+                end
+
+                if n == indx(end-1)
+                    % set(hd,'XTick',[0,Lx],'XTickLabel',{'$0$',['$',num2str(Lx),'$']})
+                    % text(Lx/2,-0.05*Ly,'$x$', ...
+                    %     'Color','k','FontSize',40,'HorizontalAlignment','center', ...
+                    %     'VerticalAlignment','middle','Interpreter','latex')
+                    % text(hd.XTick,zeros(size(hd.XTick))-0.1*Ly,hd.XTickLabel, ...
+                    %     'Color','k','FontSize',40,'HorizontalAlignment','center', ...
+                    %     'VerticalAlignment','bottom','Interpreter','latex')
+                end
 
                 % Stochastic framework
                 nexttile()
                 if isequal(mesh_config,'rectangular')
-                    surf(X,Y,Uavg(:,:,indx(n))')
-                    axis([0, Lx, 0, Ly, 0, max(Uavg,[],'all')])
+
+                    surf(X,Y,Uavg(:,:,n)')
+                    axis([0, Lx, 0, Ly, 0, max_stoch])
+
                 else % hexagonal configurations
-                    trimesh(elements,xn,yn,Uavg(:,indx(n)),'FaceColor','interp','EdgeColor','black')
-        
+
+                    trimesh(elements,xn,yn,Uavg(:,n),'FaceColor','interp','EdgeColor','black')
+
                     if isequal(mesh_config,'flat-top')
-                        axis([0, Lx+dx/2, 0, Ly, 0, max(Uavg,[],'all')])
+                        axis([0, Lx+dx/2, 0, Ly, 0, max_stoch])
                     else
-                        axis([0, Lx, 0, Ly+dy/2, 0, max(Uavg,[],'all')])
+                        axis([0, Lx, 0, Ly+dy/2, 0, max_stoch])
                     end
-                end
 
-                xlab = xlabel('$x$','Interpreter','latex','FontSize',15);
-                set(xlab, 'Units', 'Normalized', 'Position', [0.5, -0.04, 0]);
-
-                set(gca,'XTick',[0,Lx],'XTickLabel',{'$0$','$L_{x}$'}, ...
-                    'YTick',[],'TickLabelInterpreter','latex', ...
-                    'FontSize',15)
-                shading interp
-                axis equal
-                view(0,90)
-                colormap(cork)
-                clim([min(f),max(f)])
-
-                if n == Nt-1
-                    cbh = colorbar;
-                    cbh.Layout.Tile = 'south';
-                    cbh.FontSize = 10;
-                    cbh.TickLabelInterpreter = 'latex';
                 end
                 
+                shading interp
+                axis equal
+                grid off
+                view(0,90)
+                colormap(cmap)
+                clim([min(f),max(f)])
+                
+                hs = gca; 
+                set(hs,'XColor','none','YColor','none')
+                % set(h,'Units','normalized','Position',[0 0 0.75 0.75])
+
+                if n == indx(end-1)
+                    xlabel('$x$','FontSize',40,'Interpreter','latex')      
+    
+                    % set(hs,'XTick',[0,Lx],'XTickLabel',{'$0$',['$',num2str(Lx),'$']})
+                    % text(Lx/2,-0.05*Ly,'$x$', ...
+                    %     'Color','k','FontSize',40,'HorizontalAlignment','center', ...
+                    %     'VerticalAlignment','middle','Interpreter','latex')
+                    % text(hs.XTick,zeros(size(hs.XTick))-0.1*Ly,hs.XTickLabel, ...
+                    %     'Color','k','FontSize',40,'HorizontalAlignment','center', ...
+                    %     'VerticalAlignment','bottom','Interpreter','latex')
+                end
+                
+                if n == indx(end)
+                    cbh = colorbar;
+                    cbh.Layout.Tile = 'south';
+                    cbh.FontSize = 40;
+                    cbh.TickLabelInterpreter = 'latex';
+                    cbh.Position(4) = 5*cbh.Position(4);
+                end
+
+                if n == indx(2)
+                    title('Stochastic','FontSize',55,'Interpreter','latex')
+                end
+             
+               
+                % Save figure in specified directory
+                set(gcf,'Units','Normalized','OuterPosition',[0 0 1 1],'Renderer','opengl')
+                movegui(gcf,'center')
                 print(gcf,[path_name,['2D_',config_dir,'_',angle_dir, ...
-                    '_',Np_dir,'_t',num2str(n)]],'-depsc2')
+                    '_',Np_dir,'_t',num2str(p)]],'-dsvg')
             end
     
-            % One-dimensional visualisations
+            % Plot one-dimensional comparisons
             figure
-            tiledlayout(2,2,'Padding','loose','TileSpacing','loose')
-            for n = 1:Nt
+            tiledlayout((Nt-1)/2,2,'Padding','loose','TileSpacing','loose')
+            p = 0; % figure counter
+            for n = indx(2:end)
+
+                p = p + 1; % increase figure count
+
                 nexttile()
                 hold on
                 if isequal(mesh_config,'rectangular')
 
-                    sy = ceil(Ny/2); % slice at approx. Lx/2
+                    sy = ceil(Ny/2); % row of nodes at Ly/2
 
-                    plot(x,c(:,sy,indx(n))','Color',colours(n,:),'LineWidth',2) % plot deterministic slice
-                    % plot(x,Uavg(:,sy,indx(n))','.','Color',colours(n,:),'MarkerSize',10) % plot stochastic average
-                    plot(x,Ul(:,sy,indx(n))','Color',colours(n,:),'LineWidth',1) % lower CI bound
-                    plot(x,Uu(:,sy,indx(n))','Color',colours(n,:),'LineWidth',1) % upper CI bound
+                    plot(x,c(:,sy,n)','Color',colours(p,:),'LineWidth',2.5) % plot deterministic density
+                    plot(x,Ul(:,sy,n)','Color',colours(p,:),'LineWidth',1) % plot 0.025 quantile
+                    plot(x,Uu(:,sy,n)','Color',colours(p,:),'LineWidth',1) % plot 0.975 quantile
 
-                    for k = 1:Nx % connect lower and upper CI bounds
-                        plot([x(k) x(k)],[Ul(k,sy,indx(n)) Uu(k,sy,indx(n))], ...
-                            'Color',colours(n,:),'LineWidth',1)
+                    for k = 1:Nx % connect quantile bounds
+                        plot([x(k) x(k)],[Ul(k,sy,n) Uu(k,sy,n)], ...
+                            'Color',colours(p,:),'LineWidth',1)
                     end
                     
-                    maxUu = max(Uu(:,sy,indx(1)));
+                    if n == indx(2) % store maximum density for first time point
+                        maxUu = max(Uu(:,sy,n));
+                    end
 
                 elseif isequal(mesh_config,'flat-top')
                     
-                    sy = ceil(Ny/2); % slice at approx. Ly/2
+                    sy = ceil(Ny/2); % row of nodes at Ly/2
+                    ry = (sy-1)*Nx/2 + (1:(Nx/2)); % row indexing
 
-                    ky = (sy-1)*Nx/2 + (1:(Nx/2)); % indexing for slice sx
+                    plot(xn(ry),c(ry,n),'Color',colours(p,:),'LineWidth',2.5) % plot deterministic density
+                    plot(xn(ry),Ul(ry,n),'Color',colours(p,:),'LineWidth',1) % plot 0.025 quantile
+                    plot(xn(ry),Uu(ry,n),'Color',colours(p,:),'LineWidth',1) % plot 0.975 quantile
 
-                    plot(xn(ky),c(ky,indx(n)),'Color',colours(n,:),'LineWidth',2.5) % plot deterministic slice
-                    % plot(xn(ky),Uavg(ky,indx(n)),'.','Color',colours(n,:),'MarkerSize',10) % plot stochastic average
-                    plot(xn(ky),Ul(ky,indx(n)),'Color',colours(n,:),'LineWidth',1) % lower CI bound
-                    plot(xn(ky),Uu(ky,indx(n)),'Color',colours(n,:),'LineWidth',1) % upper CI bound
-
-                    for k = 1:(Nx/2) % connect lower and upper CI bounds
-                        plot([xn(ky(k)) xn(ky(k))],[Ul(ky(k),indx(n)) ... 
-                            Uu(ky(k),indx(n))],'Color',colours(n,:),'LineWidth',1)
+                    for k = 1:(Nx/2) % connect quantile bounds
+                        plot([xn(ry(k)) xn(ry(k))],[Ul(ry(k),n) ... 
+                            Uu(ry(k),n)],'Color',colours(p,:),'LineWidth',1)
+                    end
+                    
+                    if n == indx(2) % store maximum density for first time point
+                        maxUu = max(Uu(ry,n));
                     end
 
-                    maxUu = max(Uu(ky,indx(1)));
+                else % pointy-top configuration
 
-                else
+                    sx = ceil(Nx/2); % column of nodes at Lx/2
+                    cx = (sx-1)*Ny/2 + (1:(Ny/2)); % column indexing
 
-                    sx = ceil(Nx/2); % slice at approx. Lx/2
+                    plot(yn(cx),c(cx,n),'Color',colours(p,:),'LineWidth',2.5) % plot deterministic density
+                    plot(yn(cx),Ul(cx,n),'Color',colours(p,:),'LineWidth',1) % plot 0.025 quantile
+                    plot(yn(cx),Uu(cx,n),'Color',colours(p,:),'LineWidth',1) % plot 0.975 quantile
 
-                    kx = (sx-1)*Ny/2 + (1:(Ny/2)); % indexing for slice sx
-                    plot(yn(kx),c(kx,indx(n)),'Color',colours(n,:),'LineWidth',2) % plot deterministic slice
-                    plot(yn(kx),Ul(kx,indx(n)),'Color',colours(n,:),'LineWidth',2) % lower CI bound
-                    plot(yn(kx),Uu(kx,indx(n)),'Color',colours(n,:),'LineWidth',2) % upper CI bound
-                    for k = 1:(Ny/2) % connect lower and upper CI bounds
-                        plot([yn(kx(k)) yn(kx(k))],[Ul(kx(k),indx(n)) ... 
-                            Uu(kx(k),indx(n))],'Color',colours(n,:),'LineWidth',1);
+                    for k = 1:(Ny/2) % connect quantile bounds
+                        plot([yn(cx(k)) yn(cx(k))],[Ul(cx(k),n) ... 
+                            Uu(cx(k),n)],'Color',colours(p,:),'LineWidth',1);
+                    end
+                    
+                    if n == indx(2) % store maximum density for first time point
+                        maxUu = max(Uu(cx,n));
                     end
 
                 end
-                subtitle(strcat('$t=',num2str(round(t(n),2)),'$'), ...
-                    'FontSize',25,'Interpreter','latex');
-                axis([0 Lx 0 maxUu])
-                set(gca,'XTick',[0 Lx/2 Lx],'YTick',[0 max(f)/2 max(f)], ...
-                    'FontSize',25)
-                
 
-                if mod(n-1,2) == 0
+                subtitle(strcat('$t=',num2str(round(t(p+1),2)),'$'), ...
+                    'FontSize',25,'Interpreter','latex');
+                axis([0 Lx 0 max(1.2,maxUu)])
+                set(gca,'XTick',[0 Lx/2 Lx],'YTick',[0 max(f)/2 max(f)], ...
+                    'FontSize',25,'TickLabelInterpreter','latex')
+                
+                % Plot y label for left column of figures
+                if mod(p-1,2) == 0
                     ylabel('Particle Density','FontSize',30,'Interpreter','latex')
                 end
-
-                if n > Nt-2
+                
+                % Plot x label for bottom row of figures
+                if p >= Nt-1
                     xlabel('Position ($x$)','Interpreter','latex','FontSize',30)
                 end
             end
@@ -331,30 +370,25 @@ for i = 1:Nr
             close all
 
         end
+               
+        % Compute quantitative metrics and output results
+        if output_results
+            MSE = compute_metrics(c,Uavg,Ul,Uu,M,mesh_config);
+            
+            fprintf(sim_results,'No. of desired particles: Np = %d (N x %g)\n',Np(j),Npl(j));
+            fprintf(sim_results,'No. of scaled particles: Np = %d\n',Npn);
+            %fprintf(sim_results,'Epsilon: %g\n',epsilon);
+            fprintf(sim_results,'MSE: %g\n\n',MSE);
 
-        % Compute quantitative metrics
-        if output_metrics
-            [epsilon,MSE] = compute_metrics(c,Uavg,Ul,Uu,M,mesh_config);
-            fprintf('Confidence interval error: %g\n',epsilon)
-            fprintf('Mean squared error: %g\n\n',MSE)
         end
-        
-        % Input results in a table
-        if output_table
-            m = m + 1; % next row of table
-            current_stats = {epsilon,MSE,theta,D(1,1),D(1,2),D(2,2), ...
-                Ex,Ey,[num2str(tau),'(',num2str(M),')'],Npn};
-            for k = 1:10
-                metrics_table{m,k} = current_stats{k};
-            end
-        end
-
+       
     end
-    fprintf('---------------------------------------\n\n')
+
+    fprintf(sim_results,'---------------------------------------\n\n');
 
 end
 
-if output_table
-    save(strcat("figures/",config_dir,'/', ...
-        config_dir,"_metrics.mat"),"metrics_table")
+% Close output of results (output_results == true)
+if output_results
+    sim_results = fclose('all');
 end

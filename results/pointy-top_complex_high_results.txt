@@ -1,0 +1,91 @@
+Filippini_et_al_2025: Output of results
+---------------------------------------
+Domain: Lx = 1, Ly= 0.8
+Mesh configuration: pointy-top
+Mesh resolution: high
+Eigenvalues: lambda_x = 0.08, lambda_y = 0.02
+Final time: T = 1
+No. of stochastic simulations: Ns = 5
+Initial condition: complex
+---------------------------------------
+
+Angle 1: 0.1309
+---------------------------------------
+Tensor components: Dxx = 0.0789778, Dxy = 0.00776457, Dyy = 0.0210222
+No. of elements: Ex = 128, Ey = 100 
+No. of lattice sites: N = 13029 
+No. of time steps: M = 3106 
+Time step duration: tau = 0.000321958 
+
+No. of desired particles: Np = 130290 (N x 10)
+No. of scaled particles: Np = 128169
+MSE: 0.00308629
+
+No. of desired particles: Np = 325725 (N x 25)
+No. of scaled particles: Np = 325204
+MSE: 0.00121686
+
+No. of desired particles: Np = 651450 (N x 50)
+No. of scaled particles: Np = 650408
+MSE: 0.000608343
+
+No. of desired particles: Np = 1302900 (N x 100)
+No. of scaled particles: Np = 1300816
+MSE: 0.000304153
+
+---------------------------------------
+
+
+Angle 2: 1.309
+---------------------------------------
+Tensor components: Dxx = 0.0240192, Dxy = 0.015, Dyy = 0.0759808
+No. of elements: Ex = 100, Ey = 64 
+No. of lattice sites: N = 6565 
+No. of time steps: M = 1999 
+Time step duration: tau = 0.00050025 
+
+No. of desired particles: Np = 65650 (N x 10)
+No. of scaled particles: Np = 65530
+MSE: 0.00240188
+
+No. of desired particles: Np = 164125 (N x 25)
+No. of scaled particles: Np = 163837
+MSE: 0.000962392
+
+No. of desired particles: Np = 328250 (N x 50)
+No. of scaled particles: Np = 327650
+MSE: 0.000481256
+
+No. of desired particles: Np = 656500 (N x 100)
+No. of scaled particles: Np = 657430
+MSE: 0.000239727
+
+---------------------------------------
+
+
+Angle 3: 2.35619
+---------------------------------------
+Tensor components: Dxx = 0.05, Dxy = -0.03, Dyy = 0.05
+No. of elements: Ex = 100, Ey = 66 
+No. of lattice sites: N = 6767 
+No. of time steps: M = 2139 
+Time step duration: tau = 0.000467508 
+
+No. of desired particles: Np = 67670 (N x 10)
+No. of scaled particles: Np = 68093
+MSE: 0.00851777
+
+No. of desired particles: Np = 169175 (N x 25)
+No. of scaled particles: Np = 170233
+MSE: 0.00340633
+
+No. of desired particles: Np = 338350 (N x 50)
+No. of scaled particles: Np = 340467
+MSE: 0.00170402
+
+No. of desired particles: Np = 676700 (N x 100)
+No. of scaled particles: Np = 676721
+MSE: 0.000856795
+
+---------------------------------------
+

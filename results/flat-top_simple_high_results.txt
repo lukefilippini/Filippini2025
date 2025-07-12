@@ -1,0 +1,25 @@
+Filippini_et_al_2025: Output of results
+---------------------------------------
+Domain: Lx = 1, Ly= 0.8
+Mesh configuration: flat-top
+Mesh resolution: high
+Eigenvalues: lambda_x = 0.08, lambda_y = 0.02
+Final time: T = 1
+No. of stochastic simulations: Ns = 5
+Initial condition: simple
+---------------------------------------
+
+Angle 2: 1.309
+---------------------------------------
+Tensor components: Dxx = 0.0240192, Dxy = 0.015, Dyy = 0.0759808
+No. of elements: Ex = 100, Ey = 88 
+No. of lattice sites: N = 8989 
+No. of time steps: M = 2332 
+Time step duration: tau = 0.000428816 
+
+No. of desired particles: Np = 898900 (N x 100)
+No. of scaled particles: Np = 898378
+MSE: 5.11178e-05
+
+---------------------------------------
+

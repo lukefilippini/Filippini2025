@@ -43,7 +43,7 @@ fprintf('No. of scaled particles: Np = %g \n',Npn)
 % Run simulations
 N = repmat(N0,1,Ns); % initialise no. of nodes
 U = N * Sp ./ V; % initial particle density
-Uavg(:,1) = mean(U,2); Ustd(:,1) = std(U,[],2);
+Uavg(:,1) = mean(U,2); % Ustd(:,1) = std(U,[],2);
 
 fprintf('Stochastic progress: ')
 k = 0; % counter
